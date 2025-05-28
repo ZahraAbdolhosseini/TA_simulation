@@ -7,15 +7,15 @@
 
 // --- Configuration ---
 #define NUM_STUDENTS 10       // Total number of students to simulate
-#define MAX_CHAIRS 5          // Number of chairs in the waiting room [cite: 36]
+#define MAX_CHAIRS 5          // Number of chairs in the waiting room 
 #define TA_HELP_MIN_SECONDS 1 // Minimum time TA spends helping a student
 #define TA_HELP_MAX_SECONDS 3 // Maximum time TA spends helping a student
 #define STUDENT_ARRIVAL_MIN_SECONDS 0 // Min time before next student "arrives"
 #define STUDENT_ARRIVAL_MAX_SECONDS 2 // Max time before next student "arrives"
 
 // --- Semaphores and Mutex ---
-sem_t waiting_room_chairs_sem;      // Limits students in waiting chairs [cite: 36]
-sem_t student_present_for_ta_sem; // Student signals TA they are ready/present [cite: 38]
+sem_t waiting_room_chairs_sem;      // Limits students in waiting chairs 
+sem_t student_present_for_ta_sem; // Student signals TA they are ready/present 
 sem_t ta_ready_for_student_sem;     // TA signals they are ready for the specific student
 sem_t consultation_finished_sem;  // TA signals consultation with current student is over
 
@@ -39,11 +39,11 @@ void* ta_thread_func(void* arg) {
 
     while (1) { // TA works indefinitely (or until all students are processed if we add such logic)
         printf("TA: Checking for students or going to sleep...\n");
-        sem_wait(&student_present_for_ta_sem); // Wait for a student to be present [cite: 40, 42]
+        sem_wait(&student_present_for_ta_sem); // Wait for a student to be present 
 
         // A student is present and has taken a chair (and signaled).
         printf("TA: A student is present. Calling them in.\n");
-        sem_post(&ta_ready_for_student_sem); // Signal to the specific student that TA is ready [cite: 35]
+        sem_post(&ta_ready_for_student_sem); // Signal to the specific student that TA is ready 
 
         int help_duration = random_int(TA_HELP_MIN_SECONDS, TA_HELP_MAX_SECONDS);
         printf("TA: Helping a student for %d seconds...\n", help_duration);
@@ -51,7 +51,7 @@ void* ta_thread_func(void* arg) {
 
         printf("TA: Finished helping the student.\n");
         sem_post(&consultation_finished_sem); // Signal that consultation for this student is over
-                                              // TA will loop and wait for the next student [cite: 39, 40]
+                                              // TA will loop and wait for the next student 
     }
     pthread_exit(NULL);
 }
@@ -66,16 +66,16 @@ void* student_thread_func(void* student_id_ptr) {
     printf("Student %d: Arrived at TA's office.\n", student_id);
 
     pthread_mutex_lock(&count_mutex);
-    if (num_students_in_chairs < MAX_CHAIRS) { // Check if there's a chair available [cite: 36, 37]
+    if (num_students_in_chairs < MAX_CHAIRS) { // Check if there's a chair available
         num_students_in_chairs++;
         sem_wait(&waiting_room_chairs_sem); // Take one of the available chair slots
         printf("Student %d: Took a chair. (Waiting students in chairs: %d)\n", student_id, num_students_in_chairs);
         pthread_mutex_unlock(&count_mutex);
 
         printf("Student %d: Informing TA they are ready.\n", student_id);
-        sem_post(&student_present_for_ta_sem); // Announce presence to TA / Wake TA [cite: 38]
+        sem_post(&student_present_for_ta_sem); // Announce presence to TA / Wake TA 
 
-        sem_wait(&ta_ready_for_student_sem); // Wait for TA to be free and call this specific student [cite: 35]
+        sem_wait(&ta_ready_for_student_sem); // Wait for TA to be free and call this specific student 
 
         // Student is now with TA, so they leave their chair.
         sem_post(&waiting_room_chairs_sem); // Free up the chair slot
@@ -90,7 +90,7 @@ void* student_thread_func(void* student_id_ptr) {
         printf("Student %d: Consultation finished. Leaving the office.\n", student_id);
 
     } else {
-        // No chairs available [cite: 37]
+        // No chairs available 
         pthread_mutex_unlock(&count_mutex);
         printf("Student %d: No chairs available. Leaving and will come back later.\n", student_id);
     }
@@ -106,25 +106,25 @@ int main() {
 
     srand(time(NULL)); // Seed random number generator
 
-    // Initialize semaphores [cite: 43]
+    // Initialize semaphores
     sem_init(&waiting_room_chairs_sem, 0, MAX_CHAIRS); // 0: shared between threads, MAX_CHAIRS initial value
     sem_init(&student_present_for_ta_sem, 0, 0);
     sem_init(&ta_ready_for_student_sem, 0, 0);
     sem_init(&consultation_finished_sem, 0, 0);
 
-    // Initialize mutex [cite: 43]
+    // Initialize mutex 
     pthread_mutex_init(&count_mutex, NULL);
 
     printf("TA Office Simulation Started. Total waiting chairs: %d\n", MAX_CHAIRS);
     printf("Total number of students: %d\n\n", NUM_STUDENTS);
 
-    // Create TA thread [cite: 42]
+    // Create TA thread 
     if (pthread_create(&ta_thread, NULL, ta_thread_func, NULL) != 0) {
         perror("Failed to create TA thread");
         return 1;
     }
 
-    // Create student threads [cite: 41]
+    // Create student threads 
     for (i = 0; i < NUM_STUDENTS; i++) {
         int* student_id = malloc(sizeof(int));
         if (student_id == NULL) {
